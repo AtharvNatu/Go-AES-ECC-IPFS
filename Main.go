@@ -4,12 +4,13 @@ import (
 	"fmt"
 )
 
+var password = "12345678"
+var inputFile = "/home/atharv/Desktop/Projects/IPFS/Data/Novel.txt"
+var encryptedFile = "/home/atharv/Desktop/Projects/IPFS/Data/Novel.txt.enc"
+var decryptedFile = "/home/atharv/Desktop/Projects/IPFS/Data/Novel_new.txt"
+
 func runAES() {
 	// Code
-	var password = "12345678"
-	var inputFile = "/home/atharv/Desktop/Projects/IPFS/Data/Ventura.bmp"
-	var encryptedFile = "/home/atharv/Desktop/Projects/IPFS/Data/Ventura.bmp.enc"
-	var decryptedFile = "/home/atharv/Desktop/Projects/IPFS/Data/Ventura_DECR.bmp"
 
 	// AES 256-bit
 	aesKey := getSymmetricKey(password)
@@ -20,19 +21,15 @@ func runAES() {
 
 func runHybridAESECC() {
 	// Code
-	var password = "12345678"
-	var inputFile = "/home/atharv/Desktop/Projects/IPFS/Data/Ventura.bmp"
-	var encryptedFile = "/home/atharv/Desktop/Projects/IPFS/Data/Ventura.bmp.enc"
-	var decryptedFile = "/home/atharv/Desktop/Projects/IPFS/Data/Ventura_DECR.bmp"
 
 	// AES 128-bit key
 	aesKey := getHybridKey(password)
 
-	// Init ECC
-	eccPrivateKey := generateECCKeyPair()
-
-	savePrivateKey(eccPrivateKey)
-	savePublicKey(eccPrivateKey.PublicKey)
+	//// Init ECC
+	//eccPrivateKey := generateECCKeyPair()
+	//
+	//savePrivateKey(eccPrivateKey)
+	//savePublicKey(eccPrivateKey.PublicKey)
 
 	// Receiver's Public Key
 	receiverPublicKey := loadPublicKey("public_key.crt")
@@ -44,9 +41,40 @@ func runHybridAESECC() {
 	fmt.Printf("\nTime to Decrypt using AES and ECC: %s\n", AesEccDecrypt(encryptedFile, decryptedFile, receiverPrivateKey))
 }
 
+func hybridEncryptAndUpload() {
+
+	// Code
+
+	// AES 128-bit key
+	aesKey := getHybridKey(password)
+
+	// Receiver's Public Key
+	receiverPublicKey := loadPublicKey("public_key.crt")
+
+	fmt.Printf("\nTime to Encrypt using AES and ECC : %s\n", AesEccEncrypt(inputFile, encryptedFile, aesKey, receiverPublicKey))
+
+	fmt.Printf("\nCID : %s\n", uploadToIPFS(encryptedFile))
+}
+
+func hybridDownloadAndDecrypt() {
+
+	// Code
+
+	downloadFromIPFS("/home/atharv/Desktop/download", "QmcoXqGpEYo5Y5gYixK94eMHX4MziYi3wKQCL2y6aoNUG5")
+
+	// Receiver's Private Key
+	receiverPrivateKey := loadPrivateKey("private_key.crt")
+
+	fmt.Printf("\nTime to Decrypt using AES and ECC: %s\n", AesEccDecrypt("/home/atharv/Desktop/download", "/home/atharv/Desktop/decrypted.txt", receiverPrivateKey))
+}
+
 func main() {
 
-	runAES()
+	//runAES()
 
-	runHybridAESECC()
+	//runHybridAESECC()
+
+	//hybridEncryptAndUpload()
+
+	hybridDownloadAndDecrypt()
 }

@@ -1,4 +1,4 @@
 package main
 
-const AesKeyLength = 128
+const AesKeyLength = 256
 const ECCKeyLength = 113

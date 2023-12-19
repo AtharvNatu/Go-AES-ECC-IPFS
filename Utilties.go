@@ -9,7 +9,7 @@ import (
 )
 
 // Converts input password into SHA-256 hash and returns slice according to AesKeyLength
-func getKey(password string) []byte {
+func getSymmetricKey(password string) []byte {
 	// Code
 	hash := sha256.New()
 	hash.Write([]byte(password))
@@ -21,6 +21,15 @@ func getKey(password string) []byte {
 		return passwordHash
 	}
 	return nil
+}
+
+// Converts input password into SHA-256 hash and returns 16 byte key
+func getHybridKey(password string) []byte {
+	// Code
+	hash := sha256.New()
+	hash.Write([]byte(password))
+	passwordHash := hash.Sum(nil)
+	return passwordHash[0:16]
 }
 
 // Generates Random IV of 16 bytes

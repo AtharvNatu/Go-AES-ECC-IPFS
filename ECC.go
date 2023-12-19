@@ -38,8 +38,6 @@ func savePrivateKey(privateKey *eciesgo.PrivateKey) {
 	if err != nil {
 		fmt.Printf("Error Occurred While Writing ECC Private Key : %s\n", err)
 	}
-
-	fmt.Println("Private Key Saved ...")
 }
 
 // Save ECC Public Key
@@ -62,8 +60,6 @@ func savePublicKey(publicKey *eciesgo.PublicKey) {
 	if err != nil {
 		fmt.Printf("Error Occurred While Writing ECC Public Key : %s\n", err)
 	}
-
-	fmt.Println("Public Key Saved ...")
 }
 
 // Load ECC Public Key

@@ -32,7 +32,7 @@ func uploadToIPFS(inputFileName string) string {
 		fmt.Printf("Error Occurred While Uploading Input File To IPFS : %s\n", err)
 	}
 
-	fmt.Println("File Uploaded To IPFS Successfully ...")
+	fmt.Println("\nFile Uploaded To IPFS Successfully ...")
 
 	return cid
 }
@@ -56,4 +56,6 @@ func downloadFromIPFS(outputPath string, cid string) {
 	if err != nil {
 		fmt.Printf("downloadFromIPFS() : Error Occurred While Downloading File From IPFS : %s\n", err)
 	}
+
+	fmt.Println("\nFile Downloaded From IPFS Successfully ...")
 }

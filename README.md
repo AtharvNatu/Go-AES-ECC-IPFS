@@ -1,4 +1,4 @@
-# Go-AES-ECC
+# Go-AES-ECC-IPFS
 A Go based implementation of AES and ECC Cryptography Algorithms to provide content security to IPFS
 
 Covers

@@ -1,89 +1,135 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
 )
 
-var password = "12345678"
-var inputFile = "/home/atharv/Desktop/IPFS-Data/Novel.txt"
-var encryptedFile = "/home/atharv/Desktop/IPFS-Data/Novel.txt.enc"
-var decryptedFile = "/home/atharv/Desktop/IPFS-Data/Novel_IPFS_Decrypted.txt"
-
-func runAES() {
-	// Code
-
-	// AES 256-bit
-	aesKey := getSymmetricKey(password)
-
-	fmt.Printf("\nTime to Encrypt using AES 256-bit Encryption : %s\n", AESEncrypt(inputFile, encryptedFile, aesKey))
-	fmt.Printf("\nTime to Decrypt using AES 256-bit Decryption : %s\n", AESDecrypt(encryptedFile, decryptedFile, aesKey))
+// Generate ECC key pair
+func generateKeyPair() (*ecdsa.PrivateKey, error) {
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, err
+	}
+	return priv, nil
 }
 
-func runHybridAESECC() {
-	// Code
-
-	// AES 128-bit key
-	aesKey := getHybridKey(password)
-
-	//// Init ECC
-	//eccPrivateKey := generateECCKeyPair()
-	//
-	//savePrivateKey(eccPrivateKey)
-	//savePublicKey(eccPrivateKey.PublicKey)
-
-	// Receiver's Public Key
-	receiverPublicKey := loadPublicKey("public_key.crt")
-
-	// Receiver's Private Key
-	receiverPrivateKey := loadPrivateKey("private_key.crt")
-
-	fmt.Printf("\nTime to Encrypt using AES and ECC : %s\n", AesEccEncrypt(inputFile, encryptedFile, aesKey, receiverPublicKey))
-	fmt.Printf("\nTime to Decrypt using AES and ECC: %s\n", AesEccDecrypt(encryptedFile, decryptedFile, receiverPrivateKey))
+// Derive shared secret using ECDH
+func deriveSharedSecret(priv *ecdsa.PrivateKey, pub *ecdsa.PublicKey) ([]byte, error) {
+	x, _ := pub.Curve.ScalarMult(pub.X, pub.Y, priv.D.Bytes())
+	hash := sha256.Sum256(x.Bytes())
+	return hash[:], nil
 }
 
-func hybridEncryptAndUpload() string {
+// Encrypt file using AES
+func encryptFile(key []byte, inputFile, outputFile string) error {
+	plaintext, err := ioutil.ReadFile(inputFile)
+	if err != nil {
+		return err
+	}
 
-	// Code
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return err
+	}
 
-	// AES 128-bit key
-	aesKey := getHybridKey(password)
+	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
+	iv := ciphertext[:aes.BlockSize]
+	_, err = io.ReadFull(rand.Reader, iv)
+	if err != nil {
+		return err
+	}
 
-	// Receiver's Public Key
-	receiverPublicKey := loadPublicKey("public_key.crt")
+	stream := cipher.NewCTR(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
 
-	fmt.Printf("\nTime to Encrypt using AES and ECC : %s\n", AesEccEncrypt(inputFile, encryptedFile, aesKey, receiverPublicKey))
-
-	cid := uploadToIPFS(encryptedFile)
-	fmt.Printf("\nCID : %s\n", cid)
-
-	return cid
+	return ioutil.WriteFile(outputFile, ciphertext, 0644)
 }
 
-func hybridDownloadAndDecrypt(inputFile string, cid string) {
+// Decrypt file using AES
+func decryptFile(key []byte, inputFile, outputFile string) error {
+	ciphertext, err := ioutil.ReadFile(inputFile)
+	if err != nil {
+		return err
+	}
 
-	// Code
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return err
+	}
 
-	downloadFromIPFS(inputFile, cid)
+	iv := ciphertext[:aes.BlockSize]
+	plaintext := make([]byte, len(ciphertext[aes.BlockSize:]))
 
-	// Receiver's Private Key
-	receiverPrivateKey := loadPrivateKey("private_key.crt")
+	stream := cipher.NewCTR(block, iv)
+	stream.XORKeyStream(plaintext, ciphertext[aes.BlockSize:])
 
-	fmt.Printf("\nTime to Decrypt using AES and ECC: %s\n", AesEccDecrypt(inputFile, decryptedFile, receiverPrivateKey))
+	return ioutil.WriteFile(outputFile, plaintext, 0644)
 }
 
 func main() {
+	// Generate ECC key pairs for Alice and Bob
+	alicePrivKey, err := generateKeyPair()
+	if err != nil {
+		log.Fatalf("Error generating Alice's key pair: %v", err)
+	}
+	bobPrivKey, err := generateKeyPair()
+	if err != nil {
+		log.Fatalf("Error generating Bob's key pair: %v", err)
+	}
 
-	//// Init ECC
-	//eccPrivateKey := generateECCKeyPair()
-	//
-	//savePrivateKey(eccPrivateKey)
-	//savePublicKey(eccPrivateKey.PublicKey)
+	// Derive shared secret
+	aliceSharedSecret, err := deriveSharedSecret(alicePrivKey, &bobPrivKey.PublicKey)
+	if err != nil {
+		log.Fatalf("Error deriving Alice's shared secret: %v", err)
+	}
+	bobSharedSecret, err := deriveSharedSecret(bobPrivKey, &alicePrivKey.PublicKey)
+	if err != nil {
+		log.Fatalf("Error deriving Bob's shared secret: %v", err)
+	}
 
-	//runAES()
+	// Ensure the derived shared secrets are equal
+	if !equal(aliceSharedSecret, bobSharedSecret) {
+		log.Fatalf("Shared secrets do not match!")
+	}
 
-	//runHybridAESECC()
+	// File paths
+	inputFile := "input.txt"
+	encryptedFile := "encrypted.dat"
+	decryptedFile := "decrypted.txt"
 
-	cid := hybridEncryptAndUpload()
+	// Encrypt the file using the shared secret
+	err = encryptFile(aliceSharedSecret, inputFile, encryptedFile)
+	if err != nil {
+		log.Fatalf("Error encrypting file: %v", err)
+	}
+	fmt.Println("File encrypted successfully.")
 
-	hybridDownloadAndDecrypt("/home/atharv/Desktop/IPFS-Data/Encrypted-Novel-File", cid)
+	// Decrypt the file using the shared secret
+	err = decryptFile(bobSharedSecret, encryptedFile, decryptedFile)
+	if err != nil {
+		log.Fatalf("Error decrypting file: %v", err)
+	}
+	fmt.Println("File decrypted successfully.")
+}
+
+// Helper function to compare byte slices
+func equal(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

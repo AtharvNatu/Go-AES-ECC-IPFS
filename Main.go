@@ -5,9 +5,13 @@ import (
 )
 
 var password = "12345678"
-var inputFile = "Novel.txt"
-var encryptedFile = "Novel.txt.enc"
-var decryptedFile = "Novel_IPFS_Decrypted.txt"
+
+// var inputFile = "Novel.txt"
+// var encryptedFile = "Novel.txt.enc"
+// var decryptedFile = "Novel_Decrypted.txt"
+var inputFile = "C:\\Users\\Atharv\\Desktop\\Data\\50MB.txt"
+var encryptedFile = "50MB.txt.enc"
+var decryptedFile = "50MB_new.txt"
 
 func runAES() {
 	// Code
@@ -98,9 +102,9 @@ func runAESECDH() {
 	receiverSecret := deriveSharedSecret(receiverPrivateKey, senderPublicKey)
 
 	//! Validate Shared Secret
-	if !validateSecret(senderSecret, receiverSecret) {
-		fmt.Errorf("Error : Incorrect Shared Secret !!!")
-	}
+	// if !validateSecret(senderSecret, receiverSecret) {
+	// 	fmt.Errorf("Error : Incorrect Shared Secret !!!")
+	// }
 
 	// Encrypt and Decrypt
 	fmt.Printf("\nTime to Encrypt using AES and ECDH : %s\n", AesEcdhEncrypt(inputFile, encryptedFile, senderSecret))

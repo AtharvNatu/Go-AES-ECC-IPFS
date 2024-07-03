@@ -209,15 +209,30 @@ func AesEcdhEncrypt(inputFile string, outputFile string, encryptionKey []byte) t
 	}
 
 	// Create Ciphertext buffer
-	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
+	// ciphertext := make([]byte, aes.BlockSize+len(plaintext))
 
-	stream := cipher.NewCTR(blockCipher, iv)
-	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
+	// stream := cipher.NewCTR(blockCipher, iv)
+	// stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
+
+	// Pad Plaintext using PKCS#7 padding
+	plaintext = addPadding(plaintext, aes.BlockSize)
+
+	// Create new AES block cipher with CBC (Cipher Block Chaining)
+	cbcEncrypt := cipher.NewCBCEncrypter(blockCipher, iv)
+
+	// Create Ciphertext buffer
+	ciphertext := make([]byte, len(plaintext))
+
+	// Encrypt Plaintext
+	cbcEncrypt.CryptBlocks(ciphertext, plaintext)
+
+	// Combine Encrypted Content for storage
+	output := append(iv, ciphertext...)
 
 	elapsedTime := time.Since(startTime)
 
 	// Write encrypted data to output file
-	err = os.WriteFile(outputFile, ciphertext, 0644)
+	err = os.WriteFile(outputFile, output, 0644)
 	if err != nil {
 		fmt.Printf("Error Occurred While Writing To Encrypted Output File : %s\n", err)
 		return -1
@@ -232,7 +247,7 @@ func AesEcdhDecrypt(inputFile string, outputFile string, decryptionKey []byte) t
 	// Code
 
 	// Read Encrypted File
-	ciphertext, err := os.ReadFile(inputFile)
+	encryptedData, err := os.ReadFile(inputFile)
 	if err != nil {
 		fmt.Printf("Error Occurred While Reading Encrypted Input File : %s\n", err)
 		return -1
@@ -247,12 +262,27 @@ func AesEcdhDecrypt(inputFile string, outputFile string, decryptionKey []byte) t
 		return -1
 	}
 
-	iv := ciphertext[:aes.BlockSize]
+	// Extract IV
+	iv := encryptedData[:aes.BlockSize]
 
-	plaintext := make([]byte, len(ciphertext[aes.BlockSize:]))
+	ciphertext := encryptedData[aes.BlockSize:]
+	plaintext := make([]byte, len(ciphertext))
 
-	stream := cipher.NewCTR(block, iv)
-	stream.XORKeyStream(plaintext, ciphertext[aes.BlockSize:])
+	// stream := cipher.NewCTR(block, iv)
+	// stream.XORKeyStream(plaintext, ciphertext[aes.BlockSize:])
+
+	// Create new AES block cipher with CBC (Cipher Block Chaining)
+	cbcDecrypt := cipher.NewCBCDecrypter(block, iv)
+
+	// Decrypt Ciphertext
+	cbcDecrypt.CryptBlocks(plaintext, ciphertext)
+
+	// Remove padding from plaintext
+	plaintext, err = removePadding(plaintext)
+	if err != nil {
+		fmt.Printf("Error Occurred While Removing Padding : %s\n", err)
+		return -1
+	}
 
 	elapsedTime := time.Since(startTime)
 

@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	ipfsShell "github.com/ipfs/go-ipfs-api"
 	"os"
+
+	ipfsShell "github.com/ipfs/go-ipfs-api"
 )
 
 // Uploading File to IPFS
@@ -50,6 +51,12 @@ func downloadFromIPFS(outputPath string, cid string) {
 	if err != nil {
 		fmt.Printf("downloadFromIPFS() : Error Occurred While Creating Output File : %s\n", err)
 	}
+	defer func(outputFile *os.File) {
+		err := outputFile.Close()
+		if err != nil {
+
+		}
+	}(outputFile)
 
 	// Download the file from IPFS
 	err = ipfs.Get(cid, outputFile.Name())

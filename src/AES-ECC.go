@@ -4,12 +4,99 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
-	eciesgo "github.com/ecies/go"
 	"os"
 	"time"
+
+	eciesgo "github.com/ecies/go"
 )
 
-// AesEccEncrypt Encrypts the file using AES 128-bit CBC Mode Encryption along with ECC
+// Generate ECC Key Pair
+func generateECCKeyPair() *eciesgo.PrivateKey {
+	// Code
+	privateKey, err := eciesgo.GenerateKey()
+	if err != nil {
+		fmt.Printf("\nError : Failed To Generate ECC Key Pairs !!!\n")
+		return nil
+	}
+	return privateKey
+}
+
+// Save ECC Private Key
+func saveECCPrivateKey(privateKey *eciesgo.PrivateKey, fileName string) {
+
+	// Code
+
+	// Write Key to File
+	privateKeyFile, err := os.Create(fileName + ".key")
+	if err != nil {
+		fmt.Printf("Error Occurred While Creating File To Save Public Key : %s\n", err)
+	}
+	defer func(publicKeyFile *os.File) {
+		err := publicKeyFile.Close()
+		if err != nil {
+
+		}
+	}(privateKeyFile)
+
+	err = os.WriteFile(privateKeyFile.Name(), privateKey.Bytes(), 0666)
+	if err != nil {
+		fmt.Printf("Error Occurred While Writing ECC Private Key : %s\n", err)
+	}
+}
+
+// Save ECC Public Key
+func saveECCPublicKey(publicKey *eciesgo.PublicKey, fileName string) {
+	// Code
+
+	// Write Key to File
+	publicKeyFile, err := os.Create(fileName + ".key")
+	if err != nil {
+		fmt.Printf("Error Occurred While Creating File To Save Public Key : %s\n", err)
+	}
+	defer func(publicKeyFile *os.File) {
+		err := publicKeyFile.Close()
+		if err != nil {
+
+		}
+	}(publicKeyFile)
+
+	err = os.WriteFile(publicKeyFile.Name(), publicKey.Bytes(false), 0666)
+	if err != nil {
+		fmt.Printf("Error Occurred While Writing ECC Public Key : %s\n", err)
+	}
+}
+
+// Load ECC Public Key
+func loadECCPublicKey(publicKeyFile string) *eciesgo.PublicKey {
+	// Code
+
+	// Read the public key file
+	fileKey, err := os.ReadFile(publicKeyFile)
+	if err != nil {
+		fmt.Printf("Error Occurred While Reading ECC Public Key : %s\n", err)
+	}
+
+	publicKey, _ := eciesgo.NewPublicKeyFromBytes(fileKey)
+
+	return publicKey
+}
+
+// Load ECC Private Key
+func loadECCPrivateKey(privateKeyFile string) *eciesgo.PrivateKey {
+	// Code
+
+	// Read the private key file
+	fileKey, err := os.ReadFile(privateKeyFile)
+	if err != nil {
+		fmt.Printf("Error Occurred While Reading ECC Private Key : %s\n", err)
+	}
+
+	privateKey := eciesgo.NewPrivateKeyFromBytes(fileKey)
+
+	return privateKey
+}
+
+// * AesEccEncrypt() encrypts the file using AES 128-bit CBC Mode Encryption along with ECC
 func AesEccEncrypt(inputFile string, outputFile string, encryptionKey []byte, publicKey *eciesgo.PublicKey) time.Duration {
 
 	// Code
@@ -72,7 +159,7 @@ func AesEccEncrypt(inputFile string, outputFile string, encryptionKey []byte, pu
 	return elapsedTime
 }
 
-// AesEccDecrypt Decrypts the file using AES 128-bit CBC Mode Decryption along with ECC
+// * AesEccDecrypt() decrypts the file using AES 128-bit CBC Mode Decryption along with ECC
 func AesEccDecrypt(inputFile string, outputFile string, privateKey *eciesgo.PrivateKey) time.Duration {
 
 	// Code

@@ -27,7 +27,7 @@ func saveECCPrivateKey(privateKey *eciesgo.PrivateKey, fileName string) {
 	// Code
 
 	// Write Key to File
-	privateKeyFile, err := os.Create(fileName + ".key")
+	privateKeyFile, err := os.Create(fileName)
 	if err != nil {
 		fmt.Printf("Error Occurred While Creating File To Save Public Key : %s\n", err)
 	}
@@ -49,7 +49,7 @@ func saveECCPublicKey(publicKey *eciesgo.PublicKey, fileName string) {
 	// Code
 
 	// Write Key to File
-	publicKeyFile, err := os.Create(fileName + ".key")
+	publicKeyFile, err := os.Create(fileName)
 	if err != nil {
 		fmt.Printf("Error Occurred While Creating File To Save Public Key : %s\n", err)
 	}

@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"errors"
+	"os"
 )
 
 // Converts input password into SHA-256 hash and returns slice according to AesKeyLength
@@ -70,4 +71,16 @@ func removePadding(input []byte) ([]byte, error) {
 	}
 
 	return input[:len(input)-padding], nil
+}
+
+func checkKeyFile(fileName string) bool {
+
+	// Code
+	_, err := os.Stat(fileName)
+
+	if os.IsNotExist(err) {
+		return false
+	} else {
+		return true
+	}
 }

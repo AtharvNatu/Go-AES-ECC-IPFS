@@ -1,17 +1,23 @@
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
+
+var APP_MODE = AES_ECDH
+
+// Key Files
+var ECC_PrivateKey_Receiver = "ECC_PRV_KEY_SENDER.key"
+var ECC_PublicKey_Receiver = "ECC_PUB_KEY_SENDER.key"
+
+var ECDH_PrivateKey_Sender = "ECDH_PRV_KEY_SENDER.key"
+var ECDH_PublicKey_Sender = "ECDH_PUB_KEY_SENDER.key"
+var ECDH_PrivateKey_Receiver = "ECDH_PRV_KEY_RECEIVER.key"
+var ECDH_PublicKey_Receiver = "ECDH_PUB_KEY_RECEIVER.key"
 
 var password = "12345678"
-
-// var inputFile = "Novel.txt"
-// var encryptedFile = "Novel.txt.enc"
-// var decryptedFile = "Novel_Decrypted.txt"
-var inputFile = "C:\\Users\\Atharv\\Desktop\\Data\\50MB.txt"
-var encryptedFile = "50MB.txt.enc"
-var decryptedFile = "50MB_new.txt"
+var inputFile = "Input.txt"
+var encryptedFile = "Input.txt.enc"
+var decryptedFile = "Input-Decrypted.txt"
+var downloadedFile = "Input-IPFS-Download.txt"
 
 func runAES() {
 	// Code
@@ -29,33 +35,112 @@ func runHybridAESECC() {
 	// AES 128-bit key
 	aesKey := getHybridKey(password)
 
-	//// Init ECC
-	//eccPrivateKey := generateECCKeyPair()
-	//
-	//saveECCPrivateKey(eccPrivateKey)
-	//saveECCPublicKey(eccPrivateKey.PublicKey)
+	if !checkKeyFile(ECC_PublicKey_Receiver) && !checkKeyFile(ECC_PrivateKey_Receiver) {
+
+		//* Generate and Save Key
+		eccPrivateKey := generateECCKeyPair()
+
+		saveECCPrivateKey(eccPrivateKey, ECC_PrivateKey_Receiver)
+		saveECCPublicKey(eccPrivateKey.PublicKey, ECC_PublicKey_Receiver)
+	}
 
 	// Receiver's Public Key
-	receiverPublicKey := loadECCPublicKey("public_key.crt")
+	receiverPublicKey := loadECCPublicKey(ECC_PublicKey_Receiver)
 
 	// Receiver's Private Key
-	receiverPrivateKey := loadECCPrivateKey("private_key.crt")
+	receiverPrivateKey := loadECCPrivateKey(ECC_PrivateKey_Receiver)
 
 	fmt.Printf("\nTime to Encrypt using AES and ECC : %s\n", AesEccEncrypt(inputFile, encryptedFile, aesKey, receiverPublicKey))
 	fmt.Printf("\nTime to Decrypt using AES and ECC: %s\n", AesEccDecrypt(encryptedFile, decryptedFile, receiverPrivateKey))
 }
 
-func hybridEncryptAndUpload() string {
+func runAESECDH() {
 
 	// Code
+	if !checkKeyFile(ECDH_PublicKey_Sender) &&
+		!checkKeyFile(ECDH_PrivateKey_Sender) &&
+		!checkKeyFile(ECDH_PublicKey_Receiver) &&
+		!checkKeyFile(ECDH_PrivateKey_Receiver) {
 
-	// AES 128-bit key
-	aesKey := getHybridKey(password)
+		//* Generate and Save Key
+		senderPrivateKey := generateECDHKeyPair()
 
-	// Receiver's Public Key
-	receiverPublicKey := loadECCPublicKey("public_key.crt")
+		saveECDHPrivateKey(senderPrivateKey, ECDH_PrivateKey_Sender)
+		saveECDHPublicKey(&senderPrivateKey.PublicKey, ECDH_PublicKey_Sender)
 
-	fmt.Printf("\nTime to Encrypt using AES and ECC : %s\n", AesEccEncrypt(inputFile, encryptedFile, aesKey, receiverPublicKey))
+		receiverPrivateKey := generateECDHKeyPair()
+
+		saveECDHPrivateKey(receiverPrivateKey, ECDH_PrivateKey_Receiver)
+		saveECDHPublicKey(&receiverPrivateKey.PublicKey, ECDH_PublicKey_Receiver)
+	}
+
+	//* Load Key
+	senderPrivateKey := loadECDHPrivateKey(ECDH_PrivateKey_Sender)
+	senderPublicKey := loadECDHPublicKey(ECDH_PublicKey_Sender)
+
+	receiverPrivateKey := loadECDHPrivateKey(ECDH_PrivateKey_Receiver)
+	receiverPublicKey := loadECDHPublicKey(ECDH_PublicKey_Receiver)
+
+	//* Derive Shared Secret
+	senderSecret := deriveSharedSecret(senderPrivateKey, receiverPublicKey)
+	receiverSecret := deriveSharedSecret(receiverPrivateKey, senderPublicKey)
+
+	// Encrypt and Decrypt
+	fmt.Printf("\nTime to Encrypt using AES and ECDH : %s\n", AesEcdhEncrypt(inputFile, encryptedFile, senderSecret))
+	fmt.Printf("\nTime to Decrypt using AES and ECDH: %s\n", AesEcdhDecrypt(encryptedFile, decryptedFile, receiverSecret))
+}
+
+func hybridEncryptAndUpload(appMode int) string {
+
+	// Code
+	if appMode == AES_ECC {
+
+		if !checkKeyFile(ECC_PublicKey_Receiver) && !checkKeyFile(ECC_PrivateKey_Receiver) {
+
+			//* Generate and Save Key
+			eccPrivateKey := generateECCKeyPair()
+
+			saveECCPrivateKey(eccPrivateKey, ECC_PrivateKey_Receiver)
+			saveECCPublicKey(eccPrivateKey.PublicKey, ECC_PublicKey_Receiver)
+		}
+
+		// AES 128-bit key
+		aesKey := getHybridKey(password)
+
+		// Receiver's Public Key
+		receiverPublicKey := loadECCPublicKey("public_key.key")
+
+		fmt.Printf("\nTime to Encrypt using AES and ECC : %s\n", AesEccEncrypt(inputFile, encryptedFile, aesKey, receiverPublicKey))
+
+	} else if appMode == AES_ECDH {
+
+		if !checkKeyFile(ECDH_PublicKey_Sender) &&
+			!checkKeyFile(ECDH_PrivateKey_Sender) &&
+			!checkKeyFile(ECDH_PublicKey_Receiver) &&
+			!checkKeyFile(ECDH_PrivateKey_Receiver) {
+
+			//* Generate and Save Key
+			senderPrivateKey := generateECDHKeyPair()
+
+			saveECDHPrivateKey(senderPrivateKey, ECDH_PrivateKey_Sender)
+			saveECDHPublicKey(&senderPrivateKey.PublicKey, ECDH_PublicKey_Sender)
+
+			receiverPrivateKey := generateECDHKeyPair()
+
+			saveECDHPrivateKey(receiverPrivateKey, ECDH_PrivateKey_Receiver)
+			saveECDHPublicKey(&receiverPrivateKey.PublicKey, ECDH_PublicKey_Receiver)
+		}
+
+		//* Load Keys
+		senderPrivateKey := loadECDHPrivateKey(ECDH_PrivateKey_Sender)
+		receiverPublicKey := loadECDHPublicKey(ECDH_PublicKey_Receiver)
+
+		//* Derive Shared Secret
+		senderSecret := deriveSharedSecret(senderPrivateKey, receiverPublicKey)
+
+		//* Encrypt File
+		fmt.Printf("\nTime to Encrypt using AES and ECDH : %s\n", AesEcdhEncrypt(inputFile, encryptedFile, senderSecret))
+	}
 
 	cid := uploadToIPFS(encryptedFile)
 	fmt.Printf("\nCID : %s\n", cid)
@@ -63,69 +148,50 @@ func hybridEncryptAndUpload() string {
 	return cid
 }
 
-func hybridDownloadAndDecrypt(inputFile string, cid string) {
+func hybridDownloadAndDecrypt(inputFile string, cid string, appMode int) {
 
 	// Code
-
 	downloadFromIPFS(inputFile, cid)
 
-	// Receiver's Private Key
-	receiverPrivateKey := loadECCPrivateKey("private_key.crt")
+	if appMode == AES_ECC {
 
-	fmt.Printf("\nTime to Decrypt using AES and ECC: %s\n", AesEccDecrypt(inputFile, decryptedFile, receiverPrivateKey))
-}
+		// Receiver's Private Key
+		receiverPrivateKey := loadECCPrivateKey("private_key.key")
 
-func runAESECDH() {
+		fmt.Printf("\nTime to Decrypt using AES and ECC: %s\n", AesEccDecrypt(inputFile, decryptedFile, receiverPrivateKey))
 
-	// Code
+	} else if appMode == AES_ECDH {
 
-	//!Generate and Save Key
-	// senderPrivateKey := generateECDHKeyPair()
+		//* Load Keys
+		senderPublicKey := loadECDHPublicKey(ECDH_PublicKey_Sender)
+		receiverPrivateKey := loadECDHPrivateKey(ECDH_PrivateKey_Receiver)
 
-	// saveECDHPrivateKey(senderPrivateKey, "private_key_sender")
-	// saveECDHPublicKey(&senderPrivateKey.PublicKey, "public_key_sender")
+		//* Derive Shared Secret
+		receiverSecret := deriveSharedSecret(receiverPrivateKey, senderPublicKey)
 
-	// receiverPrivateKey := generateECDHKeyPair()
-
-	// saveECDHPrivateKey(receiverPrivateKey, "private_key_receiver")
-	// saveECDHPublicKey(&receiverPrivateKey.PublicKey, "public_key_receiver")
-
-	// Load Key
-	senderPrivateKey := loadECDHPrivateKey("private_key_sender.key")
-	senderPublicKey := loadECDHPublicKey("public_key_sender.key")
-
-	receiverPrivateKey := loadECDHPrivateKey("private_key_receiver.key")
-	receiverPublicKey := loadECDHPublicKey("public_key_receiver.key")
-
-	// Derive Shared Secret
-	senderSecret := deriveSharedSecret(senderPrivateKey, receiverPublicKey)
-	receiverSecret := deriveSharedSecret(receiverPrivateKey, senderPublicKey)
-
-	//! Validate Shared Secret
-	// if !validateSecret(senderSecret, receiverSecret) {
-	// 	fmt.Errorf("Error : Incorrect Shared Secret !!!")
-	// }
-
-	// Encrypt and Decrypt
-	fmt.Printf("\nTime to Encrypt using AES and ECDH : %s\n", AesEcdhEncrypt(inputFile, encryptedFile, senderSecret))
-	fmt.Printf("\nTime to Decrypt using AES and ECDH: %s\n", AesEcdhDecrypt(encryptedFile, decryptedFile, receiverSecret))
+		//* Decrypt
+		fmt.Printf("\nTime to Decrypt using AES and ECDH: %s\n", AesEcdhDecrypt(encryptedFile, decryptedFile, receiverSecret))
+	}
 }
 
 func main() {
-
-	//// Init ECC
-	//eccPrivateKey := generateECCKeyPair()
-	//
-	//savePrivateKey(eccPrivateKey)
-	//savePublicKey(eccPrivateKey.PublicKey)
 
 	// runAES()
 
 	// runHybridAESECC()
 
-	// cid := hybridEncryptAndUpload()
+	// runAESECDH()
 
-	// hybridDownloadAndDecrypt("Encrypted-Novel-File-IPFS.txt.enc", cid)
+	fmt.Println("\n----------------------------------------------------------------------------")
+	fmt.Println("ENCRYPT AND UPLOAD")
+	fmt.Println("----------------------------------------------------------------------------")
+	cid := hybridEncryptAndUpload(APP_MODE)
+	fmt.Println("\n----------------------------------------------------------------------------")
 
-	runAESECDH()
+	fmt.Println("\n----------------------------------------------------------------------------")
+	fmt.Println("DOWNLOAD AND DECRYPT")
+	fmt.Println("----------------------------------------------------------------------------")
+	hybridDownloadAndDecrypt(downloadedFile, cid, APP_MODE)
+	fmt.Println("\n----------------------------------------------------------------------------")
+
 }

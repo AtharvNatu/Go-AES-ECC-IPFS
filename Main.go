@@ -5,8 +5,8 @@ import "fmt"
 var APP_MODE = AES_ECDH
 
 // Key Files
-var ECC_PrivateKey_Receiver = "ECC_PRV_KEY_SENDER.key"
-var ECC_PublicKey_Receiver = "ECC_PUB_KEY_SENDER.key"
+var ECC_PrivateKey_Receiver = "ECC_PRV_KEY_RECEIVER.key"
+var ECC_PublicKey_Receiver = "ECC_PUB_KEY_RECEIVER.key"
 
 var ECDH_PrivateKey_Sender = "ECDH_PRV_KEY_SENDER.key"
 var ECDH_PublicKey_Sender = "ECDH_PUB_KEY_SENDER.key"

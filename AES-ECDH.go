@@ -102,19 +102,19 @@ func loadECDHPublicKey(publicKeyFile string) *ecdsa.PublicKey {
 	// Read the public key file
 	publicPemBytes, err := os.ReadFile(publicKeyFile)
 	if err != nil {
-		fmt.Errorf("Error Occurred While Reading ECDH Public Key : %s\n", err)
+		fmt.Printf("Error Occurred While Reading ECDH Public Key : %s\n", err)
 		return nil
 	}
 
 	pemBlock, _ := pem.Decode(publicPemBytes)
 	if pemBlock == nil || pemBlock.Type != "PUBLIC KEY" {
-		fmt.Errorf("Error Occurred While Decoding PEM Block For ECDH Public Key : %s\n", err)
+		fmt.Printf("Error Occurred While Decoding PEM Block For ECDH Public Key : %s\n", err)
 		return nil
 	}
 
 	publicKey, err := x509.ParsePKIXPublicKey(pemBlock.Bytes)
 	if err != nil {
-		fmt.Errorf("Error Occurred While Parsing ECDH Public Key : %s\n", err)
+		fmt.Printf("Error Occurred While Parsing ECDH Public Key : %s\n", err)
 		return nil
 	}
 
@@ -122,7 +122,7 @@ func loadECDHPublicKey(publicKeyFile string) *ecdsa.PublicKey {
 	case *ecdsa.PublicKey:
 		return publicKey
 	default:
-		fmt.Errorf("Error : Unknown Key Format : %s\n", err)
+		fmt.Printf("Error : Unknown Key Format : %s\n", err)
 		return nil
 	}
 
@@ -135,19 +135,19 @@ func loadECDHPrivateKey(privateKeyFile string) *ecdsa.PrivateKey {
 	// Read the prviate key file
 	privatePemBytes, err := os.ReadFile(privateKeyFile)
 	if err != nil {
-		fmt.Errorf("Error Occurred While Reading ECDH Private Key : %s\n", err)
+		fmt.Printf("Error Occurred While Reading ECDH Private Key : %s\n", err)
 		return nil
 	}
 
 	pemBlock, _ := pem.Decode(privatePemBytes)
 	if pemBlock == nil || pemBlock.Type != "EC PRIVATE KEY" {
-		fmt.Errorf("Error Occurred While Decoding PEM Block For ECDH Private Key : %s\n", err)
+		fmt.Printf("Error Occurred While Decoding PEM Block For ECDH Private Key : %s\n", err)
 		return nil
 	}
 
 	privateKey, _ := x509.ParseECPrivateKey(pemBlock.Bytes)
 	if privateKey == nil {
-		fmt.Errorf("Error Occurred While Parsing ECDH Private Key : %s\n", err)
+		fmt.Printf("Error Occurred While Parsing ECDH Private Key : %s\n", err)
 		return nil
 	}
 
